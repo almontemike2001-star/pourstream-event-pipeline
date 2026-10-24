@@ -23,14 +23,18 @@ with touched_orders as (
 ),
 
 orders as (
-    select lifecycle.*
+    select lifecycle.*, stores.store_name, stores.region, stores.format as store_format
     from {{ ref('int_order_lifecycle') }} as lifecycle
     inner join touched_orders using (order_id)
+    left join {{ ref('stores') }} as stores using (store_id)
 )
 
 select
     order_id,
     store_id,
+    store_name,
+    region,
+    store_format,
     session_id,
     customer_id,
     channel,

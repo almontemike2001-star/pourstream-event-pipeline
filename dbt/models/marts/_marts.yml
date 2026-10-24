@@ -63,3 +63,10 @@ models:
     columns:
       - name: arrival_date_local
         data_tests: [unique, not_null]
+
+  - name: agg_dead_letters_daily
+    description: Contract rejections by arrival date and error type.
+    data_tests:
+      - dbt_utils_free_unique_combination:
+          arguments:
+            columns: [arrival_date_local, error_type]

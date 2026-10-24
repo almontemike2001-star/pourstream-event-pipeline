@@ -2,6 +2,8 @@ select
     events.event_id as cart_item_id,
     events.session_id,
     events.store_id,
+    stores.store_name,
+    stores.region,
     events.channel,
     events.item_sku,
     menu.item_name,
@@ -13,4 +15,5 @@ select
 from {{ ref('stg_order_events') }} as events
 inner join {{ ref('menu_items') }} as menu on events.item_sku = menu.sku
 inner join {{ ref('int_sessions') }} as sessions using (session_id)
+left join {{ ref('stores') }} as stores on events.store_id = stores.store_id
 where events.event_type = 'item_added'

@@ -11,6 +11,7 @@ from pourstream import pipeline
 from pourstream.config import PROJECT_ROOT, Settings
 from pourstream.generator import SimConfig
 from pourstream.report import render
+from pourstream.serving import publish
 
 
 def _sim_config(args: argparse.Namespace) -> SimConfig:
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> None:
     transform.add_argument("dbt_args", nargs="*", default=["build"])
     report = sub.add_parser("report", help="render the HTML KPI report")
     report.add_argument("--out", default=str(PROJECT_ROOT / "reports" / "kpi_report.html"))
+    sub.add_parser("publish", help="copy gold marts to the Postgres serving DB (for Metabase)")
     run = sub.add_parser("run", help="produce + load + transform + report")
     add_sim_args(run)
     run.add_argument("--out", default=str(PROJECT_ROOT / "reports" / "kpi_report.html"))
@@ -59,6 +61,8 @@ def main(argv: list[str] | None = None) -> None:
     if args.command in {"report", "run"}:
         out = render(settings.warehouse_path, Path(args.out))
         logging.getLogger("pourstream").info("report written to %s", out)
+    if args.command == "publish":
+        publish(settings.warehouse_path)
 
 
 if __name__ == "__main__":

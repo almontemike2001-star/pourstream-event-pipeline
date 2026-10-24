@@ -13,3 +13,7 @@ logs/
 *.duckdb.wal
 reports/*.html
 .DS_Store
+bi/metabase/.env
+node_modules/
+bi/metabase/package-lock.json
+bi/metabase/dashboards.json

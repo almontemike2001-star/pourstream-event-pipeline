@@ -1,5 +1,8 @@
 select
     store_id,
+    store_name,
+    region,
+    store_format,
     order_date_local,
     order_hour_local,
     count(*) as orders,

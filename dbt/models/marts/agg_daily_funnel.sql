@@ -1,6 +1,8 @@
 select
     session_date_local,
     channel,
+    store_name,
+    region,
     count(*) as sessions,
     count(*) filter (where reached_menu) as menu_views,
     count(*) filter (where reached_cart) as carts,
