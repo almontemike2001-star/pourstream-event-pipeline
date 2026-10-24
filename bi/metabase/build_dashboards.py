@@ -493,6 +493,8 @@ def build(b: Builder) -> list[dict]:
     h = {"date": ("agg_pipeline_health", "arrival_date_local")}
     d = {"date": ("agg_dead_letters_daily", "arrival_date_local")}
     hp = "from gold.agg_pipeline_health where {{date}}"
+    # Daily views skip spill-over days (only stragglers for days already over); totals keep them.
+    hd = hp + " and not is_spillover_day"
     health = [
         b.card("Messages received", f"select sum(total_messages) as messages {hp}", "scalar", h),
         b.card(
@@ -522,7 +524,7 @@ def build(b: Builder) -> list[dict]:
                        unique_events as "Unique events",
                        duplicate_deliveries as "Duplicates",
                        dead_lettered_messages as "Dead-lettered"
-                {hp} order by 1""",
+                {hd} order by 1""",
             "bar",
             h,
             chart(
@@ -536,7 +538,7 @@ def build(b: Builder) -> list[dict]:
         ),
         b.card(
             "Late events by arrival date",
-            f"select arrival_date_local as day, late_events {hp} order by 1",
+            f"select arrival_date_local as day, late_events {hd} order by 1",
             "bar",
             h,
             chart("day", ["late_events"], [BLUE], "Arrival date", "Events > 15 min late"),
@@ -550,7 +552,8 @@ def build(b: Builder) -> list[dict]:
                           as "Future timestamp",
                       sum(dead_lettered_messages) filter (where error_type = 'invalid_json')
                           as "Invalid JSON"
-               from gold.agg_dead_letters_daily where {{date}} group by 1 order by 1""",
+               from gold.agg_dead_letters_daily where {{date}} and not is_spillover_day
+               group by 1 order by 1""",
             "bar",
             d,
             chart(
@@ -569,7 +572,7 @@ def build(b: Builder) -> list[dict]:
                        late_events as "Late", dead_lettered_messages as "Dead-lettered",
                        p50_arrival_lag_seconds as "p50 lag (s)",
                        p95_arrival_lag_seconds as "p95 lag (s)"
-                {hp} order by 1""",
+                {hd} order by 1""",
             "table",
             h,
         ),

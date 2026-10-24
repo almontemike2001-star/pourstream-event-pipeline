@@ -57,7 +57,11 @@ QUERIES = {
     "health_daily": """
         select arrival_date_local as day, unique_events, duplicate_deliveries,
                dead_lettered_messages, late_events, late_event_rate, dead_letter_rate
-        from gold.agg_pipeline_health order by 1
+        from gold.agg_pipeline_health where not is_spillover_day order by 1
+    """,
+    "spillover": """
+        select arrival_date_local as day, total_messages, late_events
+        from gold.agg_pipeline_health where is_spillover_day order by 1
     """,
     "top_items": """
         select item_name as item, category, sum(quantity) as units,

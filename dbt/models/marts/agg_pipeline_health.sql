@@ -52,7 +52,13 @@ select
     ) as dead_letter_rate,
     e.p50_arrival_lag_seconds,
     e.p95_arrival_lag_seconds,
-    e.max_arrival_lag_seconds
+    e.max_arrival_lag_seconds,
+    -- Spill-over day: only late arrivals for days that already ended, no events of its own
+    -- (e.g. phones that come back online after midnight). Kept in totals, left out of daily
+    -- trend charts so a near-empty day is not mistaken for an outage.
+    arrival_date_local > (
+        select max(cast(event_ts_local as date)) from {{ ref('stg_order_events') }}
+    ) as is_spillover_day
 from deliveries as d
 full outer join events as e using (arrival_date_local)
 full outer join dead_letters as dl using (arrival_date_local)

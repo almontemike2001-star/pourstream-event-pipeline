@@ -43,6 +43,11 @@ def test_full_pipeline_builds_and_reconciles(settings, tmp_path):
             " sum(dead_lettered_messages) from gold.agg_pipeline_health"
         ).fetchone()
         orders = con.execute("select count(*) from gold.fct_orders").fetchone()[0]
+        # A spill-over day holds only stragglers: every event on it arrived late.
+        bad_spillover = con.execute(
+            "select count(*) from gold.agg_pipeline_health"
+            " where is_spillover_day and late_events <> unique_events"
+        ).fetchone()[0]
 
     assert health == (
         len(sim.messages),
@@ -50,6 +55,7 @@ def test_full_pipeline_builds_and_reconciles(settings, tmp_path):
         sim.kinds["duplicate"],
         stats.dead_lettered,
     )
+    assert bad_spillover == 0
     # An order disappears only if every one of its events was dead-lettered.
     assert sim.orders - 5 <= orders <= sim.orders
     assert render(settings.warehouse_path, tmp_path / "report.html").stat().st_size > 5000

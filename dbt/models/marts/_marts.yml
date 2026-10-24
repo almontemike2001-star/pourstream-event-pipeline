@@ -63,6 +63,11 @@ models:
     columns:
       - name: arrival_date_local
         data_tests: [unique, not_null]
+      - name: is_spillover_day
+        description: >
+          True for arrival days that hold only late arrivals for days that already ended (no
+          events of their own). Included in totals; excluded from daily trend charts.
+        data_tests: [not_null]
 
   - name: agg_dead_letters_daily
     description: Contract rejections by arrival date and error type.
