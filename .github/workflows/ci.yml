@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Redpanda
+        run: |
+          docker run -d --name redpanda -p 19092:19092 \
+            docker.redpanda.com/redpandadata/redpanda:v24.2.7 \
+            redpanda start --mode dev-container --smp 1 \
+            --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092 \
+            --advertise-kafka-addr internal://localhost:9092,external://localhost:19092
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+
+      - name: Wait for Redpanda
+        run: |
+          for i in $(seq 1 30); do
+            docker exec redpanda rpk cluster health | grep -qE 'Healthy:.+true' && exit 0
+            sleep 2
+          done
+          docker logs redpanda; exit 1
+
+      - name: Tests (unit, end-to-end, Kafka integration)
+        env:
+          KAFKA_BOOTSTRAP: localhost:19092
+        run: uv run pytest -v
+
+      - name: Full pipeline through Kafka
+        env:
+          KAFKA_BOOTSTRAP: localhost:19092
+        run: uv run pourstream --transport kafka run
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kpi-report
+          path: reports/kpi_report.html

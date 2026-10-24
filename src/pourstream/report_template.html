@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PourStream KPI Report</title>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-0: #f4f3f0;
+    --surface-1: #fcfcfb;
+    --border: #e2e0da;
+    --grid: #ebe9e4;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #7a7973;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-0: #111110;
+      --surface-1: #1a1a19;
+      --border: #2e2d2b;
+      --grid: #262624;
+      --text-primary: #f0efec;
+      --text-secondary: #c3c2b7;
+      --text-muted: #8f8e86;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-0: #111110;
+    --surface-1: #1a1a19;
+    --border: #2e2d2b;
+    --grid: #262624;
+    --text-primary: #f0efec;
+    --text-secondary: #c3c2b7;
+    --text-muted: #8f8e86;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--surface-0); color: var(--text-primary);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 16px 64px; }
+  header p { color: var(--text-secondary); margin: 4px 0 0; max-width: 70ch; }
+  h1 { font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted);
+       margin: 36px 0 12px; font-weight: 600; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tile, .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; }
+  .tile { padding: 14px 16px; }
+  .tile .label { font-size: 12px; color: var(--text-secondary); }
+  .tile .value { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .tile .note { font-size: 12px; color: var(--text-muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+  .card { padding: 16px 16px 8px; min-width: 0; }
+  .card h3 { margin: 0; font-size: 15px; }
+  .card .sub { margin: 2px 0 0; font-size: 13px; color: var(--text-secondary); }
+  .chart { height: 300px; }
+  details { margin: 4px 0 8px; font-size: 13px; color: var(--text-secondary); }
+  summary { cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+  th { color: var(--text-muted); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+  footer { margin-top: 40px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>PourStream KPI Report</h1>
+    <p>Gold-layer metrics for a synthetic 12-store coffee chain, built from a streamed order-event
+       log with injected duplicates, late arrivals and malformed messages. All data is synthetic.</p>
+  </header>
+
+  <h2>Business</h2>
+  <div class="tiles" id="biz-tiles"></div>
+  <h2>Stream quality</h2>
+  <div class="tiles" id="health-tiles"></div>
+
+  <h2>Charts</h2>
+  <div class="grid">
+    <section class="card"><h3>Daily net revenue (PHP)</h3><p class="sub">Paid orders, excluding cancellations</p>
+      <div class="chart" id="c-revenue"></div><details><summary>Table</summary><div class="scroll" id="t-revenue"></div></details></section>
+    <section class="card"><h3>Orders by local hour</h3><p class="sub">Morning and lunch peaks drive prep times up</p>
+      <div class="chart" id="c-hourly"></div><details><summary>Table</summary><div class="scroll" id="t-hourly"></div></details></section>
+    <section class="card"><h3>Session funnel</h3><p class="sub">Furthest stage reached per session</p>
+      <div class="chart" id="c-funnel"></div><details><summary>Table</summary><div class="scroll" id="t-funnel"></div></details></section>
+    <section class="card"><h3>Prep-time SLA breach rate by store</h3><p class="sub">Share of paid orders taking over 10 min to be ready</p>
+      <div class="chart" id="c-sla"></div><details><summary>Table</summary><div class="scroll" id="t-sla"></div></details></section>
+    <section class="card"><h3>Messages by arrival date</h3><p class="sub">What the loader received, split by outcome</p>
+      <div class="chart" id="c-health"></div><details><summary>Table</summary><div class="scroll" id="t-health"></div></details></section>
+    <section class="card"><h3>Top items added to cart</h3><p class="sub">Units; hover for cart-to-order conversion</p>
+      <div class="chart" id="c-items"></div><details><summary>Table</summary><div class="scroll" id="t-items"></div></details></section>
+  </div>
+
+  <h2>Dead-letter queue</h2>
+  <section class="card"><div class="scroll" id="t-dlq"></div><p class="sub" style="margin:8px 0">Rejected by the event contract and kept with the raw payload for replay.</p></section>
+
+  <footer>Generated by <code>pourstream report</code> from the DuckDB warehouse.</footer>
+</main>
+<script>
+const DATA = __DATA__;
+const fmt = {
+  int: v => v == null ? "–" : Math.round(v).toLocaleString("en-US"),
+  php: v => v == null ? "–" : "₱" + Math.round(v).toLocaleString("en-US"),
+  pct: v => v == null ? "–" : (v * 100).toFixed(1) + "%",
+  min: v => v == null ? "–" : v.toFixed(1) + " min",
+};
+const k = DATA.kpis[0], h = DATA.health_totals[0];
+const tile = (label, value, note = "") =>
+  `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></div>`;
+document.getElementById("biz-tiles").innerHTML = [
+  tile("Orders", fmt.int(k.orders)),
+  tile("Net revenue", fmt.php(k.net_revenue)),
+  tile("Completion rate", fmt.pct(k.completion_rate)),
+  tile("Cancellation rate", fmt.pct(k.cancellation_rate)),
+  tile("Avg prep time", fmt.min(k.avg_prep_minutes)),
+  tile("Prep SLA breaches", fmt.pct(k.sla_breach_rate), "over 10 min"),
+].join("");
+document.getElementById("health-tiles").innerHTML = [
+  tile("Messages received", fmt.int(h.total_messages)),
+  tile("Unique events", fmt.int(h.unique_events)),
+  tile("Duplicates collapsed", fmt.int(h.duplicates), fmt.pct(h.duplicates / h.total_messages) + " of messages"),
+  tile("Late events", fmt.int(h.late_events), "arrived over 15 min after event time"),
+  tile("Dead-lettered", fmt.int(h.dead_letters), fmt.pct(h.dead_letters / h.total_messages) + " of messages"),
+  tile("p95 arrival lag", fmt.int(h.p95_lag_seconds) + " s", "event time to broker"),
+].join("");
+
+function table(id, rows, formats = {}) {
+  if (!rows.length) return;
+  const cols = Object.keys(rows[0]);
+  const cell = (c, v) => (formats[c] ? formats[c](v) : (v ?? "–"));
+  document.getElementById(id).innerHTML =
+    `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map(r => `<tr>${cols.map(c => `<td>${cell(c, r[c])}</td>`).join("")}</tr>`).join("") +
+    "</tbody></table>";
+}
+const funnelRows = Object.entries(DATA.funnel[0]).map(([stage, sessions]) => ({ stage, sessions }));
+table("t-revenue", DATA.daily_revenue, { revenue: fmt.php, orders: fmt.int });
+table("t-hourly", DATA.hourly_orders, { orders: fmt.int });
+table("t-funnel", funnelRows, { sessions: fmt.int });
+table("t-sla", DATA.store_sla, { breach_rate: fmt.pct, orders: fmt.int });
+table("t-health", DATA.health_daily, { late_event_rate: fmt.pct, dead_letter_rate: fmt.pct });
+table("t-items", DATA.top_items, { conversion: fmt.pct, units: fmt.int });
+table("t-dlq", DATA.dlq, { messages: fmt.int });
+
+function draw() {
+  const css = getComputedStyle(document.documentElement);
+  const v = name => css.getPropertyValue(name).trim();
+  const s1 = v("--series-1"), s2 = v("--series-2"), s3 = v("--series-3");
+  const base = (extra = {}) => ({
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)",
+    font: { color: v("--text-secondary"), size: 12 },
+    margin: { l: 56, r: 12, t: 8, b: 36 },
+    hoverlabel: { bgcolor: v("--surface-1"), bordercolor: v("--border"), font: { color: v("--text-primary") } },
+    xaxis: { gridcolor: v("--grid"), linecolor: v("--border"), zeroline: false, ...(extra.xaxis || {}) },
+    yaxis: { gridcolor: v("--grid"), linecolor: v("--border"), zeroline: false, automargin: true, ...(extra.yaxis || {}) },
+    showlegend: false, bargap: 0.25, ...extra.rest,
+  });
+  const cfg = { displayModeBar: false, responsive: true };
+  const bar = { marker: { color: s1, line: { width: 0 } } };
+
+  Plotly.react("c-revenue", [{
+    type: "scatter", mode: "lines+markers", x: DATA.daily_revenue.map(r => r.day),
+    y: DATA.daily_revenue.map(r => r.revenue), line: { color: s1, width: 2 },
+    marker: { size: 8, color: s1, line: { color: v("--surface-1"), width: 2 } },
+    hovertemplate: "%{x|%a %d %b}<br>₱%{y:,.0f}<extra></extra>",
+  }], base({ xaxis: { tickformat: "%a %d" }, yaxis: { tickprefix: "₱", tickformat: "~s", rangemode: "tozero" } }), cfg);
+
+  Plotly.react("c-hourly", [{
+    type: "bar", x: DATA.hourly_orders.map(r => r.hour), y: DATA.hourly_orders.map(r => r.orders), ...bar,
+    customdata: DATA.hourly_orders.map(r => r.p90_prep_minutes),
+    hovertemplate: "%{x}:00<br>%{y:,} orders<br>p90 prep %{customdata} min<extra></extra>",
+  }], base({ xaxis: { dtick: 2, ticksuffix: ":00" } }), cfg);
+
+  Plotly.react("c-funnel", [{
+    type: "bar", orientation: "h", y: funnelRows.map(r => r.stage), x: funnelRows.map(r => r.sessions), ...bar,
+    text: funnelRows.map(r => fmt.pct(r.sessions / funnelRows[0].sessions)), textposition: "outside",
+    textfont: { color: v("--text-secondary") }, cliponaxis: false,
+    hovertemplate: "%{y}<br>%{x:,} sessions (%{text})<extra></extra>",
+  }], base({ yaxis: { autorange: "reversed", gridcolor: "rgba(0,0,0,0)" }, rest: { margin: { l: 104, r: 48, t: 8, b: 36 } } }), cfg);
+
+  Plotly.react("c-sla", [{
+    type: "bar", orientation: "h", y: DATA.store_sla.map(r => r.store.replace("PourStream ", "")),
+    x: DATA.store_sla.map(r => r.breach_rate), ...bar,
+    customdata: DATA.store_sla.map(r => [r.format, r.avg_prep_minutes]),
+    hovertemplate: "%{y} (%{customdata[0]})<br>%{x:.1%} breached<br>avg prep %{customdata[1]} min<extra></extra>",
+  }], base({ xaxis: { tickformat: ".0%" }, yaxis: { autorange: "reversed", gridcolor: "rgba(0,0,0,0)" }, rest: { margin: { l: 130, r: 12, t: 8, b: 36 } } }), cfg);
+
+  const hd = DATA.health_daily;
+  const stack = (name, key, color) => ({
+    type: "bar", name, x: hd.map(r => r.day), y: hd.map(r => r[key]),
+    marker: { color, line: { color: v("--surface-1"), width: 1 } },
+    hovertemplate: `%{x|%a %d %b}<br>${name}: %{y:,}<extra></extra>`,
+  });
+  Plotly.react("c-health", [
+    stack("Unique events", "unique_events", s1),
+    stack("Duplicates", "duplicate_deliveries", s2),
+    stack("Dead-lettered", "dead_lettered_messages", s3),
+  ], base({ xaxis: { tickformat: "%a %d" }, rest: {
+    barmode: "stack", showlegend: true,
+    legend: { orientation: "h", traceorder: "normal", y: 1.12, x: 0, font: { color: v("--text-secondary") } },
+    margin: { l: 56, r: 12, t: 28, b: 36 } } }), cfg);
+
+  Plotly.react("c-items", [{
+    type: "bar", orientation: "h", y: DATA.top_items.map(r => r.item), x: DATA.top_items.map(r => r.units), ...bar,
+    customdata: DATA.top_items.map(r => (r.conversion * 100).toFixed(1)),
+    hovertemplate: "%{y}<br>%{x:,} units<br>%{customdata}% converted to an order<extra></extra>",
+  }], base({ yaxis: { autorange: "reversed", gridcolor: "rgba(0,0,0,0)" }, rest: { margin: { l: 130, r: 12, t: 8, b: 36 } } }), cfg);
+}
+draw();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
+</body>
+</html>

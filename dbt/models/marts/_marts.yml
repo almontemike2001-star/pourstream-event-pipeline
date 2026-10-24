@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      One row per order with lifecycle timestamps and status. Incremental (delete+insert on
+      order_id); late events rebuild the affected orders.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: store_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_stores'), field: store_id}
+      - name: order_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [cancelled, completed, ready, preparing, awaiting_payment, incomplete]
+      - name: net_revenue
+        description: Order amount if paid and not cancelled (refunded on cancellation), else 0.
+        data_tests: [not_null]
+      - name: cancel_reason
+        data_tests:
+          - accepted_values:
+              arguments: {values: [payment_failed, customer_request, not_picked_up]}
+
+  - name: fct_sessions
+    description: One row per ordering session with the furthest funnel stage reached.
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('fct_orders'), field: order_id}
+
+  - name: fct_cart_items
+    description: One row per item added to a cart, priced from the menu, with conversion flag.
+    columns:
+      - name: cart_item_id
+        data_tests: [unique, not_null]
+
+  - name: dim_stores
+    columns:
+      - name: store_id
+        data_tests: [unique, not_null]
+
+  - name: agg_store_hourly
+    description: Orders, revenue and prep-time SLA by store and local hour.
+    data_tests:
+      - dbt_utils_free_unique_combination:
+          arguments:
+            columns: [store_id, order_date_local, order_hour_local]
+
+  - name: agg_daily_funnel
+    description: Session conversion funnel by local date and channel.
+
+  - name: agg_pipeline_health
+    description: Stream quality by arrival date (duplicates, late events, dead letters, lag).
+    columns:
+      - name: arrival_date_local
+        data_tests: [unique, not_null]

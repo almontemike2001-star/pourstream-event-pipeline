@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_order_events
+    description: Deduplicated, contract-valid order events (one row per event_id), timestamps in UTC.
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
+      - name: event_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [session_started, menu_viewed, item_added, checkout_started, order_placed,
+                         payment_failed, payment_succeeded, order_ready, order_picked_up, order_cancelled]
+      - name: event_ts
+        data_tests: [not_null]
+      - name: store_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stores'), field: store_id}
+      - name: item_sku
+        data_tests:
+          - relationships:
+              arguments: {to: ref('menu_items'), field: sku}
+      - name: channel
+        data_tests:
+          - accepted_values:
+              arguments: {values: [app, web, kiosk]}
+      - name: delivery_count
+        description: How many times this event was delivered to bronze (>1 means duplicates were collapsed).
+        data_tests: [not_null]
+      - name: arrival_lag_seconds
+        description: Broker arrival time minus device event time.
+
+  - name: stg_dead_letters
+    description: Messages rejected by the event contract.
+    columns:
+      - name: error_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [invalid_json, schema_violation, future_timestamp]}

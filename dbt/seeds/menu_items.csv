@@ -1,0 +1,16 @@
+sku,item_name,category,unit_price
+ESP-AMR,Americano,espresso,95.00
+ESP-LAT,Cafe Latte,espresso,125.00
+ESP-SPN,Spanish Latte,espresso,135.00
+ESP-CAP,Cappuccino,espresso,125.00
+ESP-MOC,Mocha,espresso,140.00
+ESP-CRM,Caramel Macchiato,espresso,145.00
+CLD-CBR,Cold Brew,cold_brew,120.00
+CLD-SCB,Sea Salt Cold Brew,cold_brew,140.00
+NCF-MAT,Matcha Latte,non_coffee,135.00
+NCF-CHO,Dark Chocolate,non_coffee,120.00
+NCF-STR,Strawberry Milk,non_coffee,115.00
+FOD-CRS,Butter Croissant,food,85.00
+FOD-ENS,Ensaymada,food,65.00
+FOD-SND,Chicken Pesto Sandwich,food,165.00
+FOD-CKE,Ube Cheesecake Slice,food,150.00

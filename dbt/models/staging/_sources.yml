@@ -1,0 +1,16 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Append-only Parquet lake written by the micro-batch loader (one file per batch).
+    meta:
+      external_location: >-
+        read_parquet('{{ env_var("POURSTREAM_DATA_DIR") }}/lake/bronze/{name}/*/*.parquet',
+        hive_partitioning = true)
+    tables:
+      - name: order_events
+        description: >
+          Contract-valid events exactly as delivered. At-least-once: the same event_id can
+          appear more than once (producer retries, loader replays).
+      - name: order_events_dlq
+        description: Messages rejected by the event contract, with the raw payload and reason.

@@ -1,0 +1,13 @@
+store_id,store_name,city,region,format,opened_on
+ST001,PourStream Ayala Triangle,Makati,NCR,kiosk,2023-02-14
+ST002,PourStream BGC High Street,Taguig,NCR,flagship,2022-11-05
+ST003,PourStream Ortigas Center,Pasig,NCR,standard,2023-04-01
+ST004,PourStream Katipunan,Quezon City,NCR,standard,2023-06-18
+ST005,PourStream UP Town,Quezon City,NCR,kiosk,2024-01-20
+ST006,PourStream Alabang Town,Muntinlupa,NCR,standard,2023-09-09
+ST007,PourStream Eastwood,Quezon City,NCR,standard,2024-03-03
+ST008,PourStream Capitol Commons,Pasig,NCR,kiosk,2024-05-11
+ST009,PourStream IT Park,Cebu City,Visayas,flagship,2024-02-02
+ST010,PourStream Ayala Center Cebu,Cebu City,Visayas,standard,2024-07-15
+ST011,PourStream Abreeza,Davao City,Mindanao,standard,2024-08-21
+ST012,PourStream Nuvali,Santa Rosa,Luzon,kiosk,2025-01-10

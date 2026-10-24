@@ -1,0 +1,36 @@
+name: pourstream
+version: "0.1.0"
+config-version: 2
+profile: pourstream
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  late_arrival_minutes: 15     # arrival lag beyond which an event counts as late
+  prep_sla_minutes: 10         # paid -> ready target
+  incremental_lookback_minutes: 120  # re-derive orders touched by recently ingested events
+  local_utc_offset_hours: 8    # Asia/Manila (no DST)
+
+models:
+  pourstream:
+    staging:
+      +materialized: view
+      +schema: silver
+    intermediate:
+      +materialized: view
+      +schema: silver
+    marts:
+      +materialized: table
+      +schema: gold
+
+seeds:
+  pourstream:
+    +schema: reference
+    stores:
+      +column_types: {opened_on: date}
+    menu_items:
+      +column_types: {unit_price: "decimal(10,2)"}

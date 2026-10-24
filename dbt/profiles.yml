@@ -1,0 +1,9 @@
+pourstream:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('POURSTREAM_DATA_DIR') }}/warehouse.duckdb"
+      threads: 4
+      settings:
+        TimeZone: UTC
